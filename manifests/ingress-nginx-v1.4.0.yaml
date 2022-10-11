@@ -506,6 +506,7 @@ spec:
         - mountPath: /usr/local/certificates/
           name: webhook-cert
           readOnly: true
+      hostNetwork: true
       dnsPolicy: ClusterFirst
       nodeSelector:
         kubernetes.io/os: linux
