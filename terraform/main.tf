@@ -132,12 +132,14 @@ resource "google_service_account" "ca-issuer" {
   display_name = "Service Account For Workload Identity"
 }
 resource "google_project_iam_member" "storage-role" {
-  role = "roles/storage.admin"
-  member = "serviceAccount:${google_service_account.ca-issuer.email}"
+  role    = "roles/storage.admin"
+  member  = "serviceAccount:${google_service_account.ca-issuer.email}"
+  project = var.project_id
 }
 resource "google_project_iam_member" "workload_identity-role" {
   role   = "roles/iam.workloadIdentityUser"
-  member = "serviceAccount:${var.project}.svc.id.goog[cert-manager/cert-manager-google-cas-issuer]"
+  member = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager-google-cas-issuer]"
+  project = var.project_id
 }
 
 resource "google_privateca_ca_pool_iam_binding" "binding" {
