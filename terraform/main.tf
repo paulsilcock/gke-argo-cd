@@ -112,7 +112,6 @@ data "kubectl_file_documents" "certmanager" {
 resource "kubectl_manifest" "certmanager" {
   count              = length(data.kubectl_file_documents.certmanager.documents)
   yaml_body          = element(data.kubectl_file_documents.certmanager.documents, count.index)
-  override_namespace = "cert-manager"
 }
 
 data "kubectl_file_documents" "google_cas_issuer" {
