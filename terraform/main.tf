@@ -131,6 +131,7 @@ module "workload-identity" {
   namespace    = "cert-manager"
   project_id   = var.project_id
   k8s_sa_name  = "cert-manager-google-cas-issuer"
+  roles        = ["roles/iam.workloadIdentityUser"]
 }
 
 resource "google_privateca_ca_pool_iam_binding" "binding" {
