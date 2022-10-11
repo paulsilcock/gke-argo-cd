@@ -124,34 +124,6 @@ resource "kubectl_manifest" "google_cas_issuer" {
   override_namespace = "cert-manager"
 }
 
-resource "google_service_account" "ca-issuer" {
-  depends_on = [
-    kubectl_manifest.google_cas_issuer
-  ]
-  account_id   = "sa-google-cas-issuer"
-  display_name = "Service Account For Workload Identity"
-}
-resource "google_project_iam_member" "storage-role" {
-  role    = "roles/storage.admin"
-  member  = "serviceAccount:${google_service_account.ca-issuer.email}"
-  project = var.project_id
-}
-resource "google_project_iam_member" "workload_identity-role" {
-  role   = "roles/iam.workloadIdentityUser"
-  member = "serviceAccount:${var.project_id}.svc.id.goog[cert-manager/cert-manager-google-cas-issuer]"
-  project = var.project_id
-}
-
-resource "google_privateca_ca_pool_iam_binding" "binding" {
-  ca_pool  = "projects/${var.project_id}/locations/${var.region}/caPools/ca-pool"
-  project  = var.project_id
-  location = var.region
-  role     = "roles/privateca.certificateManager"
-  members = [
-    "serviceAccount:${google_service_account.ca-issuer.email}",
-  ]
-}
-
 resource "kubectl_manifest" "certIssuer" {
   yaml_body = <<YAML
 apiVersion: cas-issuer.jetstack.io/v1beta1
