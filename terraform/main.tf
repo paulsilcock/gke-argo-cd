@@ -124,10 +124,6 @@ resource "kubectl_manifest" "google_cas_issuer" {
   override_namespace = "cert-manager"
 }
 
-resource "google_service_account" "service_account" {
-  account_id = "sa-google-cas-issuer"
-}
-
 module "workload-identity" {
   source       = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
   cluster_name = var.cluster_name
