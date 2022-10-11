@@ -360,7 +360,7 @@ metadata:
   namespace: ingress-nginx
 spec:
   externalTrafficPolicy: Local
-  loadBalancerIP: 34.160.3.254
+  loadBalancerIP: 34.89.32.55
   ipFamilies:
   - IPv4
   ipFamilyPolicy: SingleStack
