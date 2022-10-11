@@ -139,7 +139,7 @@ module "workload-identity" {
 }
 
 resource "google_privateca_ca_pool_iam_binding" "binding" {
-  ca_pool  = "ca_pool"
+  ca_pool  = "projects/${var.project_id}/locations/${var.region}/caPools/ca-pool"
   project  = var.project_id
   location = var.region
   role     = "roles/privateca.certificateManager"
