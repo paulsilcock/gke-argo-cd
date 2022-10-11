@@ -1,24 +1,25 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: argocd-managed-cert-ingress
-  namespace: argocd
   annotations:
+    cert-manager.io/cluster-issuer: cert-issuer
     kubernetes.io/ingress.class: "nginx"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  name: argocd-server
+  namespace: argocd
 spec:
   rules:
     - host: cd.pauljs.io
       http:
         paths:
-          - path: "/*"
-            pathType: Prefix
+          - pathType: Prefix
+            path: "/*"
             backend:
               service:
                 name: argocd-server
                 port:
-                  name: http
+                  number: 80
   tls:
     - hosts:
         - cd.pauljs.io
-      secretName: argocd-certificate
+      secretName: argocd-server-cert

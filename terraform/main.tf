@@ -114,27 +114,13 @@ resource "kubectl_manifest" "certmanager" {
   yaml_body = element(data.kubectl_file_documents.certmanager.documents, count.index)
 }
 
-data "kubectl_file_documents" "google_cas_issuer" {
-  content = file("../manifests/google-cas-issuer-v0.6.0-alpha.1.yaml")
+data "kubectl_file_documents" "cert_issuer" {
+  content = file("../manifests/issuer.yaml")
 }
 
-resource "kubectl_manifest" "google_cas_issuer" {
-  count              = length(data.kubectl_file_documents.google_cas_issuer.documents)
-  yaml_body          = element(data.kubectl_file_documents.google_cas_issuer.documents, count.index)
-  override_namespace = "cert-manager"
-}
-
-resource "kubectl_manifest" "certIssuer" {
-  yaml_body = <<YAML
-apiVersion: cas-issuer.jetstack.io/v1beta1
-kind: GoogleCASClusterIssuer
-metadata:
-  name: googlecasclusterissuer
-spec:
-  project: ${var.project_id}
-  location: ${var.region}
-  caPoolId: ca-pool
-YAML
+resource "kubectl_manifest" "cert_issuer" {
+  count              = length(data.kubectl_file_documents.cert_issuer.documents)
+  yaml_body          = element(data.kubectl_file_documents.cert_issuer.documents, count.index)
 }
 
 data "kubectl_file_documents" "nginx" {
