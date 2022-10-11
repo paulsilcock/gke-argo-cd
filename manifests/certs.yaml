@@ -1,17 +1,22 @@
-apiVersion: networking.gke.io/v1
-kind: ManagedCertificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
 metadata:
-  name: managed-cert
-spec:
-  domains:
-    - pauljs.io
-    - www.pauljs.io
----
-apiVersion: networking.gke.io/v1
-kind: ManagedCertificate
-metadata:
+  name: argocd-certificate
   namespace: argocd
-  name: managed-cert
 spec:
-  domains:
+  # The secret name to store the signed certificate
+  secretName: argocd-cert-tls
+  # Common Name
+  commonName: cd.pauljs.io
+  # DNS SAN
+  dnsNames:
     - cd.pauljs.io
+  # Duration of the certificate
+  duration: 24h
+  # Renew 8 hours before the certificate expiration
+  renewBefore: 8h
+  # Important: Ensure the issuerRef is set to the issuer or cluster issuer configured earlier
+  issuerRef:
+    group: cas-issuer.jetstack.io
+    kind: GoogleCASClusterIssuer # or GoogleCASIssuer
+    name: googlecasclusterissuer-sample # or googlecasissuer-sample

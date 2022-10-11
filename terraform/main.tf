@@ -172,7 +172,7 @@ resource "kubectl_manifest" "certIssuer" {
 apiVersion: cas-issuer.jetstack.io/v1beta1
 kind: GoogleCASClusterIssuer
 metadata:
-  name: googlecasclusterissuer-sample
+  name: googlecasclusterissuer
 spec:
   project: <project_id>
   location: ${var.region}
