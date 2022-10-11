@@ -110,8 +110,8 @@ data "kubectl_file_documents" "certmanager" {
 }
 
 resource "kubectl_manifest" "certmanager" {
-  count              = length(data.kubectl_file_documents.certmanager.documents)
-  yaml_body          = element(data.kubectl_file_documents.certmanager.documents, count.index)
+  count     = length(data.kubectl_file_documents.certmanager.documents)
+  yaml_body = element(data.kubectl_file_documents.certmanager.documents, count.index)
 }
 
 data "kubectl_file_documents" "google_cas_issuer" {
@@ -124,14 +124,20 @@ resource "kubectl_manifest" "google_cas_issuer" {
   override_namespace = "cert-manager"
 }
 
-module "workload-identity" {
-  source       = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
-  cluster_name = var.cluster_name
-  name         = "sa-google-cas-issuer"
-  namespace    = "cert-manager"
-  project_id   = var.project_id
-  k8s_sa_name  = "cert-manager-google-cas-issuer"
-  roles        = ["roles/iam.workloadIdentityUser"]
+resource "google_service_account" "ca-issuer" {
+  depends_on = [
+    kubectl_manifest.google_cas_issuer
+  ]
+  account_id   = "sa-google-cas-issuer"
+  display_name = "Service Account For Workload Identity"
+}
+resource "google_project_iam_member" "storage-role" {
+  role = "roles/storage.admin"
+  member = "serviceAccount:${google_service_account.ca-issuer.email}"
+}
+resource "google_project_iam_member" "workload_identity-role" {
+  role   = "roles/iam.workloadIdentityUser"
+  member = "serviceAccount:${var.project}.svc.id.goog[cert-manager/cert-manager-google-cas-issuer]"
 }
 
 resource "google_privateca_ca_pool_iam_binding" "binding" {
@@ -140,7 +146,7 @@ resource "google_privateca_ca_pool_iam_binding" "binding" {
   location = var.region
   role     = "roles/privateca.certificateManager"
   members = [
-    "serviceAccount:sa-google-cas-issuer@${var.project_id}.iam.gserviceaccount.com",
+    "serviceAccount:${google_service_account.ca-issuer.email}",
   ]
 }
 
@@ -151,7 +157,7 @@ kind: GoogleCASClusterIssuer
 metadata:
   name: googlecasclusterissuer
 spec:
-  project: <project_id>
+  project: ${var.project_id}
   location: ${var.region}
   caPoolId: ca-pool
 YAML
