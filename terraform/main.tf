@@ -96,10 +96,6 @@ data "kubectl_file_documents" "namespaces" {
   content = file("../manifests/namespaces.yaml")
 }
 
-data "kubectl_file_documents" "certs" {
-  content = file("../manifests/certs.yaml")
-}
-
 data "kubectl_file_documents" "argocd" {
   content = file("../manifests/install-argocd.yaml")
 }
@@ -107,21 +103,6 @@ data "kubectl_file_documents" "argocd" {
 resource "kubectl_manifest" "namespaces" {
   count     = length(data.kubectl_file_documents.namespaces.documents)
   yaml_body = element(data.kubectl_file_documents.namespaces.documents, count.index)
-}
-
-resource "kubectl_manifest" "certs" {
-  count     = length(data.kubectl_file_documents.certs.documents)
-  yaml_body = element(data.kubectl_file_documents.certs.documents, count.index)
-}
-
-resource "kubectl_manifest" "argocd" {
-  depends_on = [
-    kubectl_manifest.namespaces,
-    kubectl_manifest.certs
-  ]
-  count              = length(data.kubectl_file_documents.argocd.documents)
-  yaml_body          = element(data.kubectl_file_documents.argocd.documents, count.index)
-  override_namespace = "argocd"
 }
 
 data "kubectl_file_documents" "certmanager" {
@@ -178,4 +159,23 @@ spec:
   location: ${var.region}
   caPoolId: ca-pool
 YAML
+}
+
+data "kubectl_file_documents" "nginx" {
+  content = file("../manifests/ingress-nginx-v1.4.0.yaml")
+}
+
+resource "kubectl_manifest" "nginx" {
+  count     = length(data.kubectl_file_documents.nginx.documents)
+  yaml_body = element(data.kubectl_file_documents.nginx.documents, count.index)
+}
+
+resource "kubectl_manifest" "argocd" {
+  depends_on = [
+    kubectl_manifest.namespaces,
+    kubectl_manifest.nginx
+  ]
+  count              = length(data.kubectl_file_documents.argocd.documents)
+  yaml_body          = element(data.kubectl_file_documents.argocd.documents, count.index)
+  override_namespace = "argocd"
 }
