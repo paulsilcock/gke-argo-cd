@@ -43,10 +43,10 @@ resource "google_container_node_pool" "main_spot_nodes" {
   location = var.location
   cluster  = google_container_cluster.main.name
 
-  initial_node_count = 2
+  initial_node_count = 1
 
   autoscaling {
-    min_node_count = 2
+    min_node_count = 1
     max_node_count = 3
   }
 
@@ -58,6 +58,44 @@ resource "google_container_node_pool" "main_spot_nodes" {
   node_config {
     preemptible  = true
     machine_type = "e2-highmem-2"
+
+    service_account = google_service_account.main.email
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+  }
+
+  timeouts {
+    create = "20m"
+    update = "20m"
+  }
+}
+
+resource "google_container_node_pool" "gpu_spot_nodes" {
+  name     = "${var.cluster_name}-nodepool-gpu"
+  location = var.location
+  cluster  = google_container_cluster.main.name
+
+  initial_node_count = 0
+
+  autoscaling {
+    total_min_node_count = 0
+    total_max_node_count = 1
+  }
+
+  management {
+    auto_repair  = true
+    auto_upgrade = true
+  }
+
+  node_config {
+    preemptible  = true
+    machine_type = "n2-highcpu-2"
+
+    guest_accelerator {
+      type = "nvidia-tesla-t4"
+      count = 1
+    }
 
     service_account = google_service_account.main.email
     oauth_scopes = [
