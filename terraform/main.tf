@@ -130,7 +130,7 @@ provider "kubectl" {
   host                   = module.gke_auth.host
   cluster_ca_certificate = module.gke_auth.cluster_ca_certificate
   token                  = module.gke_auth.token
-  load_config_file       = true
+  load_config_file       = false
 }
 
 data "kubectl_file_documents" "namespaces" {
