@@ -12,7 +12,7 @@ terraform {
   }
 }
 
-provider "google" {
+provider "google-beta" {
   project = var.project_id
   region  = var.region
   zone    = var.location
@@ -32,6 +32,11 @@ resource "google_container_cluster" "main" {
   # node pool and immediately delete it.
   remove_default_node_pool = true
   initial_node_count       = 1
+  
+  cluster_autoscaling {
+    enabled = true
+    autoscaling_profile = "OPTIMIZE_UTILIZATION"
+  }
 }
 
 resource "google_container_node_pool" "main_spot_nodes" {
@@ -75,8 +80,8 @@ resource "google_container_node_pool" "gpu_spot_nodes" {
   initial_node_count = 0
 
   autoscaling {
-    total_min_node_count = 0
-    total_max_node_count = 1
+    min_node_count = 0
+    max_node_count = 1
   }
 
   management {
