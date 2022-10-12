@@ -131,6 +131,7 @@ provider "kubectl" {
   cluster_ca_certificate = module.gke_auth.cluster_ca_certificate
   token                  = module.gke_auth.token
   load_config_file       = false
+  apply_retry_count      = 3
 }
 
 data "kubectl_file_documents" "namespaces" {
