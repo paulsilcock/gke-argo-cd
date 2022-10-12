@@ -12,7 +12,7 @@ terraform {
   }
 }
 
-provider "google-beta" {
+provider "google" {
   project = var.project_id
   region  = var.region
   zone    = var.location
@@ -24,6 +24,8 @@ resource "google_service_account" "main" {
 }
 
 resource "google_container_cluster" "main" {
+  provider = google-beta
+
   name     = var.cluster_name
   location = var.location
 
