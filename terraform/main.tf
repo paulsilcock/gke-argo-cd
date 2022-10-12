@@ -3,7 +3,7 @@ terraform {
   required_providers {
     kubectl = {
       source  = "gavinbunney/kubectl"
-      version = ">= 1.7.0"
+      version = ">= 1.14.0"
     }
   }
   backend "gcs" {
@@ -112,13 +112,13 @@ resource "google_container_node_pool" "gpu_spot_nodes" {
   }
 }
 
-resource "time_sleep" "wait_60_seconds" {
+resource "time_sleep" "wait_30_seconds" {
   depends_on      = [google_container_node_pool.gpu_spot_nodes]
-  create_duration = "60s"
+  create_duration = "30s"
 }
 
 module "gke_auth" {
-  depends_on           = [time_sleep.wait_60_seconds]
+  depends_on           = [time_sleep.wait_30_seconds]
   source               = "terraform-google-modules/kubernetes-engine/google//modules/auth"
   project_id           = var.project_id
   cluster_name         = google_container_cluster.main.name
