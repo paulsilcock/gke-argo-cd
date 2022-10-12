@@ -101,7 +101,7 @@ resource "google_container_node_pool" "gpu_spot_nodes" {
 
   node_config {
     preemptible  = true
-    machine_type = "n2-highcpu-2"
+    machine_type = "n1-standard-1"
 
     guest_accelerator {
       type  = "nvidia-tesla-t4"
