@@ -117,21 +117,21 @@ resource "time_sleep" "wait_30_seconds" {
   create_duration = "30s"
 }
 
-module "gke_auth" {
-  depends_on           = [time_sleep.wait_30_seconds]
-  source               = "terraform-google-modules/kubernetes-engine/google//modules/auth"
-  project_id           = var.project_id
-  cluster_name         = google_container_cluster.main.name
-  location             = var.location
-  use_private_endpoint = false
-}
+# module "gke_auth" {
+#   depends_on           = [time_sleep.wait_30_seconds]
+#   source               = "terraform-google-modules/kubernetes-engine/google//modules/auth"
+#   project_id           = var.project_id
+#   cluster_name         = google_container_cluster.main.name
+#   location             = var.location
+#   use_private_endpoint = false
+# }
 
-provider "kubectl" {
-  host                   = module.gke_auth.host
-  cluster_ca_certificate = module.gke_auth.cluster_ca_certificate
-  token                  = module.gke_auth.token
-  load_config_file       = true
-}
+# provider "kubectl" {
+#   host                   = module.gke_auth.host
+#   cluster_ca_certificate = module.gke_auth.cluster_ca_certificate
+#   token                  = module.gke_auth.token
+#   load_config_file       = true
+# }
 
 data "kubectl_file_documents" "namespaces" {
   content = file("../manifests/namespaces.yaml")
