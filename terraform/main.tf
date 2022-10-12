@@ -38,6 +38,14 @@ resource "google_container_cluster" "main" {
   cluster_autoscaling {
     enabled             = true
     autoscaling_profile = "OPTIMIZE_UTILIZATION"
+    resource_limits {
+      resource_type = "cpu"
+      maximum       = 6
+    }
+    resource_limits {
+      resource_type = "memory"
+      maximum       = 24
+    }
   }
 }
 
