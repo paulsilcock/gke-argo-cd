@@ -112,13 +112,13 @@ resource "google_container_node_pool" "gpu_spot_nodes" {
   }
 }
 
-resource "time_sleep" "wait_30_seconds" {
+resource "time_sleep" "wait_60_seconds" {
   depends_on      = [google_container_cluster.main]
-  create_duration = "30s"
+  create_duration = "60s"
 }
 
 module "gke_auth" {
-  depends_on           = [time_sleep.wait_30_seconds]
+  depends_on           = [time_sleep.wait_60_seconds]
   source               = "terraform-google-modules/kubernetes-engine/google//modules/auth"
   project_id           = var.project_id
   cluster_name         = google_container_cluster.main.name
