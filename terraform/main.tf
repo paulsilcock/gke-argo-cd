@@ -113,7 +113,7 @@ resource "google_container_node_pool" "gpu_spot_nodes" {
 }
 
 resource "time_sleep" "wait_60_seconds" {
-  depends_on      = [google_container_cluster.main]
+  depends_on      = [google_container_node_pool.gpu_spot_nodes]
   create_duration = "60s"
 }
 
