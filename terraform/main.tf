@@ -34,9 +34,9 @@ resource "google_container_cluster" "main" {
   # node pool and immediately delete it.
   remove_default_node_pool = true
   initial_node_count       = 1
-  
+
   cluster_autoscaling {
-    enabled = true
+    enabled             = true
     autoscaling_profile = "OPTIMIZE_UTILIZATION"
   }
 }
@@ -96,7 +96,7 @@ resource "google_container_node_pool" "gpu_spot_nodes" {
     machine_type = "n2-highcpu-2"
 
     guest_accelerator {
-      type = "nvidia-tesla-t4"
+      type  = "nvidia-tesla-t4"
       count = 1
     }
 
@@ -112,25 +112,35 @@ resource "google_container_node_pool" "gpu_spot_nodes" {
   }
 }
 
-resource "time_sleep" "wait_30_seconds" {
-  depends_on      = [google_container_cluster.main]
-  create_duration = "30s"
+# resource "time_sleep" "wait_30_seconds" {
+#   depends_on      = [google_container_cluster.main]
+#   create_duration = "30s"
+# }
+
+# module "gke_auth" {
+#   depends_on           = [time_sleep.wait_30_seconds]
+#   source               = "terraform-google-modules/kubernetes-engine/google//modules/auth"
+#   project_id           = var.project_id
+#   cluster_name         = google_container_cluster.main.name
+#   location             = var.location
+#   use_private_endpoint = false
+# }
+
+data "google_client_config" "default" {
 }
 
-module "gke_auth" {
-  depends_on           = [time_sleep.wait_30_seconds]
-  source               = "terraform-google-modules/kubernetes-engine/google//modules/auth"
-  project_id           = var.project_id
-  cluster_name         = google_container_cluster.main.name
-  location             = var.location
-  use_private_endpoint = false
+data "google_container_cluster" "main" {
+  name     = var.cluster_name
+  location = var.location
 }
 
 provider "kubectl" {
-  host                   = module.gke_auth.host
-  cluster_ca_certificate = module.gke_auth.cluster_ca_certificate
-  token                  = module.gke_auth.token
-  load_config_file       = false
+  host  = "https://${data.google_container_cluster.main.endpoint}"
+  token = data.google_client_config.default.access_token
+  cluster_ca_certificate = base64decode(
+    data.google_container_cluster.main.master_auth[0].cluster_ca_certificate,
+  )
+  load_config_file = false
 }
 
 data "kubectl_file_documents" "namespaces" {
@@ -160,8 +170,8 @@ data "kubectl_file_documents" "cert_issuer" {
 }
 
 resource "kubectl_manifest" "cert_issuer" {
-  count              = length(data.kubectl_file_documents.cert_issuer.documents)
-  yaml_body          = element(data.kubectl_file_documents.cert_issuer.documents, count.index)
+  count     = length(data.kubectl_file_documents.cert_issuer.documents)
+  yaml_body = element(data.kubectl_file_documents.cert_issuer.documents, count.index)
 }
 
 data "kubectl_file_documents" "nginx" {
