@@ -149,13 +149,63 @@ provider "kubectl" {
   load_config_file = false
 }
 
+data "kubectl_file_documents" "namespaces" {
+  content = file("../manifests/namespaces.yaml")
+}
+
+resource "kubectl_manifest" "namespaces" {
+  count     = length(data.kubectl_file_documents.namespaces.documents)
+  yaml_body = element(data.kubectl_file_documents.namespaces.documents, count.index)
+}
+
+data "google_service_account" "terraform-sa" {
+  account_id = "terraform"
+}
+
+# Allow terraform service account to specify IAM policies on storage buckets
+resource "google_project_iam_binding" "terraform-binding" {
+  project = var.project_id
+  role    = "roles/storage.admin"
+  members = [
+    "serviceAccount:${data.google_service_account.terraform-sa.email}"
+  ]
+}
+
+resource "google_storage_bucket" "dvcremote" {
+  depends_on = [
+    google_project_iam_binding.terraform-binding
+  ]
+  name                        = "dvcremote-pauljs-io"
+  location                    = var.region
+  uniform_bucket_level_access = true
+}
+
 # Create GSA, KSA and bind them
-module "dvc-remote-workload-id" {
-  source     = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
-  name       = "dvc-remote"
-  namespace  = "dev"
-  project_id = var.project_id
-  roles      = ["roles/iam.workloadIdentityUser"]
+resource "google_service_account" "dvc-gsa" {
+  account_id   = "dvc-remote"
+  display_name = "DVC remote access"
+}
+resource "google_project_iam_binding" "workload_identity_binding" {
+  project = var.project_id
+  role    = "roles/iam.workloadIdentityUser"
+  members = [
+    "serviceAccount:${var.project_id}.svc.id.goog[dev/dvc-remote]"
+  ]
+}
+
+resource "kubectl_manifest" "ksa-binding" {
+  depends_on = [
+    kubectl_manifest.namespaces
+  ]
+  yaml_body = <<YAML
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    iam.gke.io/gcp-service-account: terraform@${var.project_id}.iam.gserviceaccount.com
+  name: dvc-remote
+  namespace: dev
+YAML
 }
 
 # Policy to allow service account access to bucket
@@ -163,48 +213,36 @@ data "google_iam_policy" "dvc-bucket-access" {
   binding {
     role = "roles/storage.objectViewer"
     members = [
-      module.dvc-remote-workload-id.gcp_service_account_fqn
+      "serviceAccount:${google_service_account.dvc-gsa.email}"
     ]
   }
 
   binding {
     role = "roles/storage.objectCreator"
     members = [
-      module.dvc-remote-workload-id.gcp_service_account_fqn
+      "serviceAccount:${google_service_account.dvc-gsa.email}"
     ]
   }
 
   binding {
     role = "roles/storage.legacyBucketReader"
     members = [
-      module.dvc-remote-workload-id.gcp_service_account_fqn
+      "serviceAccount:${google_service_account.dvc-gsa.email}"
     ]
   }
 }
 
-resource "google_storage_bucket" "dvcremote" {
-  name                        = "dvcremote-pauljs-io"
-  location                    = var.region
-  uniform_bucket_level_access = true
-}
-
 # Bind policy to bucket
 resource "google_storage_bucket_iam_policy" "policy" {
+  depends_on = [
+    google_project_iam_binding.terraform-binding
+  ]
   bucket      = google_storage_bucket.dvcremote.name
   policy_data = data.google_iam_policy.dvc-bucket-access.policy_data
 }
 
-data "kubectl_file_documents" "namespaces" {
-  content = file("../manifests/namespaces.yaml")
-}
-
 data "kubectl_file_documents" "argocd" {
   content = file("../manifests/install-argocd.yaml")
-}
-
-resource "kubectl_manifest" "namespaces" {
-  count     = length(data.kubectl_file_documents.namespaces.documents)
-  yaml_body = element(data.kubectl_file_documents.namespaces.documents, count.index)
 }
 
 data "kubectl_file_documents" "certmanager" {
