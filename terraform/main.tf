@@ -183,7 +183,7 @@ data "google_iam_policy" "dvc-bucket-access" {
 }
 
 resource "google_storage_bucket" "dvcremote" {
-  name          = "dvcremote.pauljs.io"
+  name          = "dvcremote-pauljs-io"
   location      = "${var.region}"
 }
 
