@@ -154,7 +154,7 @@ module "dvc-remote-workload-id" {
   source     = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
   name       = "dvc-remote"
   namespace  = "dev"
-  project_id = "${var.project_id}"
+  project_id = var.project_id
   roles      = ["roles/iam.workloadIdentityUser"]
 }
 
@@ -183,13 +183,14 @@ data "google_iam_policy" "dvc-bucket-access" {
 }
 
 resource "google_storage_bucket" "dvcremote" {
-  name          = "dvcremote-pauljs-io"
-  location      = "${var.region}"
+  name                        = "dvcremote-pauljs-io"
+  location                    = var.region
+  uniform_bucket_level_access = true
 }
 
 # Bind policy to bucket
 resource "google_storage_bucket_iam_policy" "policy" {
-  bucket = google_storage_bucket.dvcremote.name
+  bucket      = google_storage_bucket.dvcremote.name
   policy_data = data.google_iam_policy.dvc-bucket-access.policy_data
 }
 
