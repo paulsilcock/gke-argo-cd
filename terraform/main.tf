@@ -47,6 +47,10 @@ resource "google_container_cluster" "main" {
       maximum       = 24
     }
   }
+
+  workload_identity_config {
+    workload_pool = "${var.project_id}.svc.id.goog"
+  }
 }
 
 resource "google_container_node_pool" "main_spot_nodes" {
@@ -74,6 +78,10 @@ resource "google_container_node_pool" "main_spot_nodes" {
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
   }
 
   timeouts {
@@ -112,6 +120,10 @@ resource "google_container_node_pool" "gpu_spot_nodes" {
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform"
     ]
+
+    workload_metadata_config {
+      mode = "GKE_METADATA"
+    }
   }
 
   timeouts {
@@ -135,6 +147,50 @@ provider "kubectl" {
     data.google_container_cluster.main.master_auth[0].cluster_ca_certificate,
   )
   load_config_file = false
+}
+
+# Create GSA, KSA and bind them
+module "dvc-remote-workload-id" {
+  source     = "terraform-google-modules/kubernetes-engine/google//modules/workload-identity"
+  name       = "dvc-remote"
+  namespace  = "dev"
+  project_id = "${var.project_id}"
+  roles      = ["roles/iam.workloadIdentityUser"]
+}
+
+# Policy to allow service account access to bucket
+data "google_iam_policy" "dvc-bucket-access" {
+  binding {
+    role = "roles/storage.objectViewer"
+    members = [
+      module.dvc-remote-workload-id.gcp_service_account_fqn
+    ]
+  }
+
+  binding {
+    role = "roles/storage.objectCreator"
+    members = [
+      module.dvc-remote-workload-id.gcp_service_account_fqn
+    ]
+  }
+
+  binding {
+    role = "roles/storage.legacyBucketReader"
+    members = [
+      module.dvc-remote-workload-id.gcp_service_account_fqn
+    ]
+  }
+}
+
+resource "google_storage_bucket" "dvcremote" {
+  name          = "dvcremote.pauljs.io"
+  location      = "${var.region}"
+}
+
+# Bind policy to bucket
+resource "google_storage_bucket_iam_policy" "policy" {
+  bucket = google_storage_bucket.dvcremote.name
+  policy_data = data.google_iam_policy.dvc-bucket-access.policy_data
 }
 
 data "kubectl_file_documents" "namespaces" {
