@@ -185,8 +185,8 @@ resource "google_service_account" "dvc-gsa" {
   account_id   = "dvc-remote"
   display_name = "DVC remote access"
 }
-resource "google_project_iam_binding" "workload_identity_binding" {
-  project = var.project_id
+resource "google_service_account_iam_binding" "workload_identity_binding" {
+  service_account_id = google_service_account.dvc-gsa.id
   role    = "roles/iam.workloadIdentityUser"
   members = [
     "serviceAccount:${var.project_id}.svc.id.goog[dev/dvc-remote]"
@@ -202,7 +202,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   annotations:
-    iam.gke.io/gcp-service-account: terraform@${var.project_id}.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: dvc-remote@${var.project_id}.iam.gserviceaccount.com
   name: dvc-remote
   namespace: dev
 YAML
