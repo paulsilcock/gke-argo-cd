@@ -363,3 +363,30 @@ resource "google_project_iam_binding" "cluster-viewer" {
     "serviceAccount:${google_service_account.argo-workflow.email}"
   ]
 }
+
+# Allow Github access to GKE without using tokens
+resource "google_iam_workload_identity_pool" "workload-pool" {
+  workload_identity_pool_id = "workload-pool"
+  display_name              = "Workload pool"
+  description               = "Identity pool for external access (e.g. Github)"
+}
+resource "google_iam_workload_identity_pool_provider" "github-provider" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.workload-pool.workload_identity_pool_id
+  workload_identity_pool_provider_id = "github-provider"
+  attribute_mapping = {
+    "google.subject" : "assertion.sub"
+    "attribute.actor" : "assertion.actor"
+    "attribute.aud" : "assertion.aud"
+    "attribute.repository" : "assertion.respository"
+  }
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+}
+resource "google_service_account_iam_binding" "argo-workflow-github-access" {
+  service_account_id = google_service_account.argo-workflow.id
+  role               = "roles/iam.workloadIdentityUser"
+  members = [
+    "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.workload-pool.id}/attribute.repository/paulsilcock/mlops"
+  ]
+}
