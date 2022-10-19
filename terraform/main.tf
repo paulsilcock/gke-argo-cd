@@ -387,6 +387,6 @@ resource "google_service_account_iam_binding" "argo-workflow-github-access" {
   service_account_id = google_service_account.argo-workflow.id
   role               = "roles/iam.workloadIdentityUser"
   members = [
-    "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.workload-pool.id}/attribute.repository/paulsilcock/mlops"
+    "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.workload-pool.name}/attribute.repository/paulsilcock/mlops"
   ]
 }
