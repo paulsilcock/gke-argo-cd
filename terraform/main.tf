@@ -38,6 +38,9 @@ resource "google_container_cluster" "main" {
   name     = var.cluster_name
   location = var.location
 
+  # This disabled "Node Auto Provisioning", which 
+  # creates additional node pools to meet demand. 
+  # Instead allow provisioned node pools to scale.
   cluster_autoscaling {
     enabled = false
   }
@@ -53,12 +56,17 @@ resource "google_container_cluster" "main" {
   }
 }
 
-resource "google_container_node_pool" "single_node" {
-  name     = "${var.cluster_name}-single-nodepool"
+resource "google_container_node_pool" "generic" {
+  name     = "${var.cluster_name}-generic-nodepool"
   location = var.location
   cluster  = google_container_cluster.main.name
 
   initial_node_count = 1
+
+  autoscaling {
+    min_node_count = 1
+    max_node_count = 2
+  }
 
   management {
     auto_repair  = true
@@ -87,8 +95,8 @@ resource "google_container_node_pool" "single_node" {
   }
 }
 
-resource "google_container_node_pool" "main_spot_nodes" {
-  name     = "${var.cluster_name}-main-nodepool"
+resource "google_container_node_pool" "workloads" {
+  name     = "${var.cluster_name}-workload-nodepool"
   location = var.location
   cluster  = google_container_cluster.main.name
 
@@ -132,8 +140,8 @@ resource "google_container_node_pool" "main_spot_nodes" {
   }
 }
 
-resource "google_container_node_pool" "gpu_spot_nodes" {
-  name     = "${var.cluster_name}-nodepool-gpu"
+resource "google_container_node_pool" "gpu" {
+  name     = "${var.cluster_name}-gpu-nodepool"
   location = var.location
   cluster  = google_container_cluster.main.name
 
