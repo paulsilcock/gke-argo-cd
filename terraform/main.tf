@@ -23,15 +23,6 @@ resource "google_service_account" "main" {
   display_name = "GKE Cluster ${var.cluster_name} Service Account"
 }
 
-# Enable image pull for node service account
-resource "google_project_iam_binding" "gke-node-gsa" {
-  project = var.project_id
-  role    = "roles/artifactregistry.reader"
-  members = [
-    "serviceAccount:${google_service_account.main.email}"
-  ]
-}
-
 resource "google_container_cluster" "main" {
   provider = google-beta
 
@@ -248,7 +239,8 @@ resource "google_project_iam_binding" "artifact-registry-read" {
   project = var.project_id
   role    = "roles/artifactregistry.reader"
   members = [
-    "serviceAccount:${google_service_account.dvc-gsa.email}"
+    "serviceAccount:${google_service_account.dvc-gsa.email}",
+    "serviceAccount:${google_service_account.main.email}"
   ]
 }
 resource "kubectl_manifest" "ksa-binding" {
