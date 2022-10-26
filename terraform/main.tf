@@ -28,7 +28,7 @@ resource "google_project_iam_binding" "gke-node-gsa" {
   project = var.project_id
   role    = "roles/artifactregistry.reader"
   members = [
-    "serviceAccount:${data.google_service_account.main.email}"
+    "serviceAccount:${google_service_account.main.email}"
   ]
 }
 
