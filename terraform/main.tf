@@ -176,12 +176,6 @@ resource "google_container_node_pool" "gpu" {
     workload_metadata_config {
       mode = "GKE_METADATA"
     }
-
-    taint {
-      key    = "type"
-      value  = "workload"
-      effect = "PREFER_NO_SCHEDULE"
-    }
   }
 
   timeouts {
