@@ -130,7 +130,7 @@ resource "google_container_node_pool" "workloads" {
     taint {
       key    = "type"
       value  = "workload"
-      effect = "PREFER_NO_SCHEDULE"
+      effect = "NO_SCHEDULE"
     }
   }
 
